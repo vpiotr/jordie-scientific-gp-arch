@@ -1,0 +1,23 @@
+Map of registers for GASM vmachine
+
+OUTPUT   = 0;
+INPUT    = 1;
+INPUT_MAX = 33;
+ACCUMS   = 34;
+INT      = ACCUMS;
+INT64    = ACCUMS + 3;   // 37
+BYTE     = ACCUMS + 6;   // 40
+UINT     = ACCUMS + 9;   // 43
+UINT64   = ACCUMS + 12;  // 46
+FLOAT    = ACCUMS + 15;  // 49
+DOUBLE   = ACCUMS + 18;  // 52
+XDOUBLE  = ACCUMS + 21;  // 55
+BOOL     = ACCUMS + 24;  // 58
+VARIANTS = ACCUMS + 27;  // 61
+VIRTUAL  = 250;
+
+// register numbers
+GLOBAL_VARS   = VIRTUAL + 0;
+PROGRAM_CODE  = VIRTUAL + 1;
+NOTES         = VIRTUAL + 2;
+

@@ -1,0 +1,9 @@
+Global parameters:
+
+"mut-chg-prob-base", i, SGP_EXP_PAR_BLOCK_IDX_MUT + SGP_MUT_EP_BASE_CHG_PROB, scDataNode(0.01), scDataNode(9.0));
+"tour-size", i, SGP_EXP_PAR_BLOCK_IDX_TOUR + SGP_TOUR_PROB_EP_TOUR_SIZE, scDataNode((int)2), scDataNode((int)7));
+"tour-rel-press", i, SGP_EXP_PAR_BLOCK_IDX_TOUR + SGP_TOUR_PROB_EP_TOUR_REL_PRES, scDataNode(0.0001), scDataNode(0.9));
+"tour-distrib-dec-ratio", i, SGP_EXP_PAR_BLOCK_IDX_TOUR + SGP_TOUR_PROB_EP_DISTRIB_DEC_RATIO, scDataNode(0.0), scDataNode(7.0));
+"tour-match-out-limit", i, SGP_EXP_PAR_BLOCK_IDX_TOUR + SGP_TOUR_PROB_EP_MATCH_OUT_LIMIT, scDataNode((int)1), scDataNode((int)7));
+"tour-island-size", i, SGP_EXP_PAR_BLOCK_IDX_TOUR + SGP_TOUR_PROB_EP_ISLAND_SIZE, scDataNode(0.01), scDataNode(99.0));
+"tour-dyn-err-obj")+toString(*it), i, paramId, scDataNode(6.0), scDataNode(99.0));

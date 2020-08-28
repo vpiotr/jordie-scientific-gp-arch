@@ -1,0 +1,305 @@
+List of functions supported by GASM vmachine.
+
+==============================================
+*** Core functions
+==============================================
+
+----------------------------------------------------------------------------
+- base
+----------------------------------------------------------------------------
+noop [args]: do nothing, 0..n arguments
+move #out, value : copy value to destination
+init #out : initialize register using zero/empty value
+call #out, block_no[, input_args] :call block
+return :return from block
+set_next_block block_no :set block which should be performed as next
+set_next_block_rel block_no :set relative block no which should be performed as next
+clr_next_block :clear "next block" information
+ref.build #out, #src_reg [, item_index: uint]
+ref.clear #out : clear reference
+ref.is_ref #out, #reg : returns <true> if reg contains a ref
+define #out, data_type: define new variable stored in new register "out"
+data #reg, type, size - build data array from code segment
+cast #out, value, data_type: convert value to a different type
+rtti.data_type #out, value: returns data type of a given value
+
+----------------------------------------------------------------------------
+-- value stack
+----------------------------------------------------------------------------
+push_next_result : force next instruction with output to store it on stack
+push value : push value to value stack
+pop #out : pop value from value stack
+
+----------------------------------------------------------------------------
+-- control functions
+----------------------------------------------------------------------------
+skip.ifn value1 jump_size : skip if value is <false>
+skip.if value1 jump_size : skip if value is <true>
+skip jump_size1 : skip n cells
+jump.back jump_size1 : go back n cells
+repnz #reg jump_size : decrement #reg, if zero jump forward. Repeat if non-zero.
+repnz.back #reg jump_size : decrement #reg, if non-zero jump backward. Repeat if non-zero / backward.
+
+----------------------------------------------------------------------------
+- logic
+----------------------------------------------------------------------------
+iif #out, flag, true_value, false_value : move to output true- or false-value depending on flag
+and #out, arg1, arg2: logical AND
+or #out, arg1, arg2: logical OR
+xor #out, arg1, arg2: logical XOR
+not #out, arg1: logical NOT
+
+----------------------------------------------------------------------------
+- compare
+----------------------------------------------------------------------------
+equ.* #out, arg1, arg2: verify arg1 == arg2
+   for types: int, int64, byte, uint, uint64, float, double, xdouble, string, bool, variant
+   example: equ.int #32, 12, 13
+
+gt.* #out, arg1, arg2: verify arg1 > arg2
+   for types: int, int64, byte, uint, uint64, float, double, xdouble, string, bool, variant
+   example: gt.int #32, 12, 13
+
+gte.* #out, arg1, arg2: verify arg1 >= arg2
+   for types: int, int64, byte, uint, uint64, float, double, xdouble, string, bool, variant
+   example: gte.int #32, 12, 13
+
+lt.* #out, arg1, arg2: verify arg1 < arg2
+   for types: int, int64, byte, uint, uint64, float, double, xdouble, string, bool, variant
+   example: lt.int #32, 12, 13
+
+lte.* #out, arg1, arg2: verify arg1 <= arg2
+   for types: int, int64, byte, uint, uint64, float, double, xdouble, string, bool, variant
+   example: lte.int #32, 12, 13
+
+same #out, value1, value2: same value and same type
+
+cmp.* #out, arg1, arg2: returns compare result as int
+  -1: if arg1 < arg2
+   0: if arg1 = arg2
+  +1: if arg1 > arg2
+   for types: int, int64, byte, uint, uint64, float, double, xdouble, string, bool, variant
+
+----------------------------------------------------------------------------
+-- arithmetic
+----------------------------------------------------------------------------
+   for types: int, int64, byte, uint, uint64, float, double, xdouble
+
+add.* #out, arg1, arg2
+sub.* #out, arg1, arg2
+mult.* #out, arg1, arg2
+div.* #out, arg1, arg2
+
+invs.* #out, arg1: calculate f(x) = 1/x (safe version)
+   for types: float, double, xdouble
+
+multdiv.* #out, arg1, arg2, arg3 : calculate f(x) = arg1 * arg2 / arg3
+   for types: int, byte, uint, float, double
+
+pow.uint #out, arg1, arg2 : calculate f(x) = arg1 ^ arg2
+   for types: byte, uint, uint64 - used as uint
+   returns: uint64
+
+mod.* #out, arg1, arg2
+   for types: int, int64, byte, uint, uint64
+
+----------------------------------------------------------------------------
+-- bitwise operations
+----------------------------------------------------------------------------
+   for types: byte, uint, uint64
+
+bit.and.* #out, arg1, arg2
+  example: bit.and.byte #32, 21, 13
+bit.or.* #out, arg1, arg2
+bit.xor.* #out, arg1, arg2
+bit.not.* #out, arg1
+bit.shr.* #out, arg1, arg2
+bit.shl.* #out, arg1, arg2
+
+----------------------------------------------------------------------------
+-- arithmetic 2 - sign-oriented
+----------------------------------------------------------------------------
+   for types: int, int64, float, double, xdouble
+
+abs.* #out, arg1: absolute value
+neg.* #out, arg1: negative value
+sgn.* #out, arg1: return sign of value
+  -1: if arg1 < 0
+   0: if arg = 0
+  +1: if arg > 0
+
+----------------------------------------------------------------------------
+-- float round, part functions
+----------------------------------------------------------------------------
+   for types: float, double, xdouble
+
+ceil.* #out, arg1   : The smallest integral value not less than x. Round up.
+floor.* #out, arg1  : The largest integral value not greater than x. Round down.
+frac.* #out, arg1   : Returns fractional part of the FP value
+
+trunc.* #out, arg1  : Returns integer part of the FP value (as int)
+trunc64.* #out, arg1: Returns integer part of the FP value (as int64)
+truncf.* #out, arg1 : Returns integer part of the FP value (as float,double,xdouble)
+
+round.* #out, arg1  : Returns FP value rounded mathematically and returns result as int
+round64.* #out, arg1: Returns FP value rounded mathematically and returns result as int64
+roundf.* #out, arg1 : Returns FP value rounded mathematically and returns result as float,double,xdouble
+
+----------------------------------------------------------------------------
+-- array functions
+----------------------------------------------------------------------------
+array.init #out[, type] : initialization of array, clears contents
+array.define #out, type, size : define an array variable
+array.size #out, #in_reg : returns size of array
+array.add_item #in_reg, value : add an item to array, reg-only
+array.erase_item #in_reg, index : remove item from array, reg-only
+array.set_item #in_reg, index, value : remove item from array, reg-only
+array.get_item #out, #in_reg, index : returns item from array
+array.index_of #out, #in_reg, value : returns index of value in array
+array.merge #out, #in_reg1, #in_reg2 : returns merged arrays, types must be equal
+array.range #out, #in_reg1, start[, size] : returns merged arrays, types must be equal
+array.range #out, #in_reg, idx_first, count : returns part of array
+array.merge #out, #in_reg1, #in_reg2 : merges two arrays
+
+----------------------------------------------------------------------------
+-- struct functions
+----------------------------------------------------------------------------
+struct.init #out : initialization of struct, clears contents
+struct.size #out, #in_reg : returns size of array
+struct.add_item #in_reg, value[, name] : add an item to array, reg-only
+struct.erase_item #in_reg, index : remove item from struct
+struct.set_item #in_reg, index, value : change value of item in struct
+struct.get_item #out, #in_reg, index : returns item from struct
+struct.index_of #out, #in_reg, value : returns index of value in array
+struct.merge #out, #in_reg1, #in_reg2 : returns merged arrays, types must be equal
+struct.range #out, #in_reg1, start[, size] : returns merged arrays, types must be equal
+struct.get_item_name #out, #in_reg1, index : returns name of item
+
+----------------------------------------------------------------------------
+-- string functions
+----------------------------------------------------------------------------
+string.size #out, value : returns length of string
+string.merge #out, value1, value2
+string.get_char #out, index, value : returns nth char as byte
+string.set_char #out, index, value, new_char_val : modifies nth char
+string.range #out, value, pos, size : returns part of string (substring)
+string.find #out, value, find_text, pos : returns position of find_text in value
+string.replace #out, value, find_text, new_text : replace text
+
+----------------------------------------------------------------------------
+-- vector functions
+----------------------------------------------------------------------------
+vector.min #out, #in_reg: find minimum value in array
+vector.max #out, #in_reg: find maximum value in array
+vector.sum #out, #in_reg: find sum of values in array
+vector.avg #out, #in_reg: find average of values in array
+vector.sort #in_reg: sort items of vector
+vector.distinct #in_reg: make items of vector unique
+vector.norm #in_reg: normalize vector
+vector.dot_product #out, #in_reg1, #in_reg2: calculate dot product of two vectors
+vector.std_dev #out, #in_reg1: calculate standard dev
+
+----------------------------------------------------------------------------
+-- dates
+----------------------------------------------------------------------------
+date.nowf #out : returns current date & time in floating point format
+date.nows #out : returns current date & time in string format
+date.nowi #out : returns current date & time in ticks (uint64) format
+date.datei #out : returns current date as yymmdd (uint) format
+
+----------------------------------------------------------------------------
+-- random values
+----------------------------------------------------------------------------
+rand.init : initialize random number generator
+rand.randomf #out : returns random value 0..1
+rand.randomi #out, min, max : returns random integer value min..max
+
+----------------------------------------------------------------------------
+-- block functions
+----------------------------------------------------------------------------
+block.add #out: creates a new block of code, returns block no >0 if success
+block.init #out, block_no: initialize block code, block_no must be != active, returns action result as bool
+block.erase block_no: remove block of code, block_no must be != active
+block.size #out, block_no: returns size of a given block
+block.count #out: returns number of defined blocks
+block.active_id #out: returns id of active block
+
+==============================================
+*** FMath functions
+==============================================
+   for types: float, double, xdouble
+
+----------------------------------------------------------------------------
+-- trigonometry
+----------------------------------------------------------------------------
+fmath.sin.* #out, arg1
+fmath.cos.* #out, arg1
+fmath.tan.* #out, arg1
+fmath.asin.* #out, arg1
+fmath.acos.* #out, arg1
+fmath.atan.* #out, arg1
+fmath.sinh.* #out, arg1
+fmath.cosh.* #out, arg1
+fmath.tanh.* #out, arg1
+
+----------------------------------------------------------------------------
+-- powers, logarithms
+----------------------------------------------------------------------------
+fmath.exp.* #out, arg1
+fmath.pow.* #out, arg1, arg2: f(a,b) = a^b. Calculates x raised to the power of y
+fmath.pow2.* #out, arg1: f(a) = a^2
+fmath.log.* #out, arg1
+fmath.logn.* #out, arg1, arg2: f(b,x) - find y for x where x = b^y
+fmath.sqrt.* #out, arg1
+
+----------------------------------------------------------------------------
+-- constants
+----------------------------------------------------------------------------
+fmath.e.* #out   : returns value of Euler constant with a specified data type
+fmath.pi.* #out  : returns value of PI constant with a specified data type
+
+==============================================
+*** complex functions
+==============================================
+Support for complex arithmetic.
+
+----------------------------------------------------------------------------
+-- arithmetic
+----------------------------------------------------------------------------
+
+complex.add #out, arg1, arg2
+complex.sub #out, arg1, arg2
+complex.mult #out, arg1, arg2
+complex.div #out, arg1, arg2
+
+----------------------------------------------------------------------------
+-- other complex functions
+----------------------------------------------------------------------------
+
+complex.polar #out, arg1, arg2: Cartesian form of the complex number specified in polar form.
+  The polar form of a complex number provides the modulus r and the argument ,
+  where these parameters are related to the real and imaginary Cartesian
+  components a and b by the equations a = r * cos ( ) and b = r * sin ().
+
+complex.sqr #out, arg1: f(x) = x^2. Square.
+
+==============================================
+*** ANN functions
+==============================================
+  ANN - Artificial Neural Network
+
+   for types: array of double
+
+ann.sigm #out, #x_input_vect, #w_weight_vect : calculate standard BP neuron output,
+  nety = sum(xi*wi)
+  y = 1/(1+exp(-nety))
+  weight vector can be shorter or longer than input,
+  - if shorter - some inputs will not be used
+  - if longer, only n+1 weights are used, where n is length of input
+
+ann.rad #out, #input_vect, #weight_vect : calculate standard BP neuron output,
+  nety = sum(xi*wi)
+  y = exp(-nety^2)
+  weight vector can be shorter or longer than input,
+  - if shorter - some inputs will not be used
+  - if longer, only n+1 weights are used, where n is length of input

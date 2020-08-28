@@ -1,0 +1,53 @@
+List of objectives
+------------------
+List of objectives that can be used to rate GP-generated programs:
+
+1=  SSE                       : -errorSse;
+     //-> squared estimate of errors
+2=  StdDev(Error)             : -errorStdDev;
+     //-> standard deviation of errors
+3=  RegDistRead               : -regDistRead;
+     //-> registry distance for inputs
+4=  RegDistWrite              : -regDistWrite;
+     //-> registry distance for outputs
+5=  RegDist                   : -regDist1;
+     //-> registry distance for any access
+6=  VarLevel                  : +double(1+countNotNullOutput) / double(gpFunctionStepCount)+non-constant-point;
+     //-> 
+7=  TypeDiff                  : -abs(double(totalTypeDiff));
+8=  TotalCost                 : -abs(log10(double(10+totalCost/totalSize)));
+9=  ProgramSize               : -abs(log10(double(10+long64(calcProgramSizeEx(code, exepectedSize)))));
+10= FailedWrites              : -failedWrites;
+11= FailedReads               : -failedReads;
+12= WriteToInput              : -writesToInput;
+13= UniqInstrCodeRatio        : +uniqueInstrCodesRatio;
+14= MaxInstrSeq               : +((no-of-same-code-seqs)^2)/instr-count;
+15= RelHitCount               : +hitCount/gpFunctionStepCount
+16= DistanceToEndOfLastWrite  : -distance-to-last-write-to-out/total-no-of-writes
+17= ConstToArgRatio           : -const/arg-count ratio
+18= ConstOnlyArgInstrToTotal  : -const-only-args-instr/total-instr-cnt
+19= StdDev(dfx-diff)          : -stdDev(dfx(i) - dy(i))
+20= StdDev(d2fx-diff)         : -stdDev(d2fx(i) - d2y(i))
+21= WriteToOutToTotalWriteCnt : -output-write-cnt/total-write-cnt
+22= Correl(fx,y)              : +correlation(fx, y) [+1,+4]
+23= FadingMaDiff(fx,y)        : -fading-MA-diff
+24= ExtremaRelError           : -(1.0 + relCountError(fx, y, filter = 5))
+25= ErrorSseAbs               : sum(sampleError * sampleError)
+26= FreqDiff                  : frequence difference(fx, y)
+27= AmpliDiff                 : amplitude difference(fx, y)
+28= IncDiff                   : increases difference(fx, y)
+
+
+Registry distance
+---------------------
+// calculate min(distance to specified regs)
+// input: range of required regs + global range scope (using mod), reg type: input,output,any
+// output: 
+//  0: all specified regs were used
+//  0..1: some regs found to be used
+//  1..n: minimal distance to specified regs (mod n)
+// How to calc:
+//  f(x) = 2 + min(distance)/max-distance - used-regs/req-regs
+//  if input mode <> any -> verify if correct, otherwise do not use point 
+//  for calculation
+
