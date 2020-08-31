@@ -1,6 +1,7 @@
 List of objectives
 ------------------
-List of objectives that can be used to rate GP-generated programs:
+List of objectives that can be used to rate GP-generated programs.
+See sgpGpFitnessFun4Regression::evaluateProgram for actual implementation details.
 
 1=  SSE                       : -errorSse;
      //-> squared estimate of errors
@@ -12,9 +13,8 @@ List of objectives that can be used to rate GP-generated programs:
      //-> registry distance for outputs
 5=  RegDist                   : -regDist1;
      //-> registry distance for any access
-6=  VarLevel                  : +double(1+countNotNullOutput) / double(gpFunctionStepCount)+non-constant-point;
-     //-> 
-7=  TypeDiff                  : -abs(double(totalTypeDiff));
+6=  VarLevel                  : calculate how much output varies across samples
+7=  TypeDiff                  : -sum(sqr(abs(double(type-Kind-Diff))));
 8=  TotalCost                 : -abs(log10(double(10+totalCost/totalSize)));
 9=  ProgramSize               : -abs(log10(double(10+long64(calcProgramSizeEx(code, exepectedSize)))));
 10= FailedWrites              : -failedWrites;
@@ -22,7 +22,7 @@ List of objectives that can be used to rate GP-generated programs:
 12= WriteToInput              : -writesToInput;
 13= UniqInstrCodeRatio        : +uniqueInstrCodesRatio;
 14= MaxInstrSeq               : +((no-of-same-code-seqs)^2)/instr-count;
-15= RelHitCount               : +hitCount/gpFunctionStepCount
+15= RelHitCount               : +hitCount/SAMPLE_COUNT
 16= DistanceToEndOfLastWrite  : -distance-to-last-write-to-out/total-no-of-writes
 17= ConstToArgRatio           : -const/arg-count ratio
 18= ConstOnlyArgInstrToTotal  : -const-only-args-instr/total-instr-cnt
@@ -50,4 +50,168 @@ Registry distance
 //  f(x) = 2 + min(distance)/max-distance - used-regs/req-regs
 //  if input mode <> any -> verify if correct, otherwise do not use point 
 //  for calculation
+
+Constant to argument ratio
+----------------------------
+Number of values being constant divided by total number of invoked function arguments.
+
+for code like:
+
+add #0, 2, 3 // = 2/3
+add #0, #0, 1 // = 1/3
+
+result would be: 3/6 = 1/2
+
+Var level
+-----------------------------
+double(1+number-of-non-null-results) / double(SAMPLE_COUNT)
++
+
+  if ((fxDistinctCnt >= MIN_OUTPUT_DISTINCT_CNT) && !isnan(fxStdDev) && !isinf(fxStdDev)) {
+    2.0
+  } else { // constant output
+    1.0/constToAllArgRatio;
+  }
+
++
+1/regDistRead + 1/regDistWrite
+
+failedWrites
+---------------
+Number of register writes which values has been ignored
+
+  if (constOutput)
+    failedWrites = CONST_OUT_FAILED_WRITES;
+  else
+    failedWrites = blockScanner.calcWritesNotUsed(SGP_MAX_REG_NO + 1, MIN_FAILED_WRITES);
+
+failedReads
+---------------
+Number of reads from registers not written yet.
+
+writesToInput
+-------------
+Number of writes to input registers.
+
+uniqueInstrCodesRatio
+----------------------
+Number of different instructions used / length of program.
+
+hitCount
+----------------------
+Number of samples for which program returns correct result.
+
+For regression check:
+
+if (std::fabs(fx - y) < HIT_THRESHOLD * std::fabs(y))
+
+
+Type-kind-diff
+----------------------
+Difference between numeric type values proportional to recognizable difference.
+
+Type values:
+
+    case vt_null:
+      res = 1;
+      break;
+    case vt_bool:
+      res = 2;
+      break;
+    case vt_byte:
+      res = 3;
+      break;
+    case vt_int:
+      res = 4;
+      break;
+    case vt_uint:
+      res = 5;
+      break;
+    case vt_int64:
+      res = 6;
+      break;
+    case vt_uint64:
+      res = 7;
+      break;
+    case vt_float:
+      res = 8;
+      break;
+    case vt_double:
+      res = 9;
+      break;
+    case vt_xdouble:
+      res = 10;
+      break;
+    case vt_string:
+      res = 15;
+      break;
+    default: {
+      res = 20;
+
+
+totalCost
+------------------
+Sum of costs of execution of each instruction during program execution.
+
+totalSize
+------------------
+  if (constOutput)
+    totalSize = CONST_OUT_SIZE;
+  else {
+    ulong64 totalSizeL = calcProgramSizeScore(info, &prgScanner);
+    totalSize = std::fabs(log10(double(10+totalSizeL)));
+  }
+
+calcProgramSizeScore
+-----------------------
+  if (m_adfsEnabled ) {
+#ifdef OPT_ADF_DEGRAD_SIZE
+  if (info.getInfoDouble(SGP_INFOBLOCK_IDX_MUT_OTHER_PARAM_BASE + SGP_MUT_OTHER_PARAM_IDX_BLOCK_DEGRAD, degradRatio)) {
+    res = scanner->calcProgramSizeDegrad(m_expectedSize, degradRatio);
+  }
+#endif
+  } else if (m_macrosEnabled) {
+    res = scanner->calcProgramSizeWithMacroSup(m_expectedSize);
+  }
+
+  if (res == 0) { // default calculation
+    res = scanner->calcProgramSizeEx(m_expectedSize);
+  }
+
+calcProgramSizeDegrad
+-----------------------
+  blockCount = m_program.getBlockCount();
+  for(uint i=0,epos = blockCount; i != epos; ++i)
+  {
+    blockSize = m_program.getBlockLength(i);
+    blockSize = round<ulong64>(static_cast<double>(blockSize) * ::calcBlockDegradFactor(i, blockDegradRatio));
+    res += blockSize;
+  }
+
+calcBlockDegradFactor
+----------------------
+  double blockFactor = 1.0;
+  for(uint i = blockNo; i > 1; i--) {
+    blockFactor *= factor;
+  }
+
+calcProgramSizeWithMacroSup
+---------------------------
+  if (blockCount > 0) {
+    res += m_program.getBlockLength(SGP_GASM_MAIN_BLOCK_INDEX);
+  }
+
+#ifdef OPT_USE_MACRO_CNT_IN_SIZE_OBJ
+// make score higher if macro count > 2
+  res = round<ulong64>(static_cast<double>(res) * std::fabs(log10(double(10 + std::max<uint>(2, blockCount) - 2))));
+#endif
+
+  if (res < minSize)
+    res = minSize;
+
+calcProgramSizeEx
+------------------
+  ulong64 res = calcProgramSize();
+  if (res < minSize)
+    res = minSize;
 
